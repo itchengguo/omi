@@ -1,5 +1,5 @@
 /*!
- *  omiu v0.0.11 By dntzhang 
+ *  omiu v0.0.15 By dntzhang 
  *  Github: https://github.com/AlloyTeam/omi
  *  MIT Licensed.
  */
@@ -248,7 +248,12 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
             fill: props.color,
             'aria-hidden': 'true'
           },
-          Omi.h('path', {
+          props.paths ? props.paths.map(function (item) {
+            var attrs = { d: item.path };
+            if (item.color) attrs.fill = item.color;
+
+            return Omi.h('path', attrs);
+          }) : Omi.h('path', {
             d: props.path ? props.path : _path2['default'][props.type][props.isFill ? 1 : 0] || _path2['default'][props.type][0]
           })
         ),
@@ -1448,6 +1453,12 @@ exports.push([module.i, ".weui-btn {\n  background-color: #9CE6BF;\n  color: #D7
 "use strict";
 
 
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _omi = __webpack_require__(0);
@@ -1494,12 +1505,16 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
     key: 'render',
     value: function render(props) {
       var display = props.show ? 'block' : 'none';
+      var styleObj = {};
+      if (props.width) {
+        styleObj.style = { width: props.width + 'px', left: '50%', marginLeft: props.width / -2 + 'px' };
+      }
       return Omi.h(
         'div',
         { 'class': 'o-dialog', style: { display: display } },
         Omi.h(
           'div',
-          { 'class': 'content' },
+          _extends({ 'class': 'content' }, styleObj),
           Omi.h(
             'h1',
             null,
@@ -1536,6 +1551,34 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
   return _class2;
 }(_omi.WeElement));
 
+var dialog = {},
+    dom = void 0;
+
+dialog.alert = function (msg, options) {
+  options = options || {};
+  if (dom) {
+    document.body.removeChild(dom);
+  }
+  dom = (0, _omi.render)(Omi.h('o-dialog', {
+    onConfirm: closeAlert,
+    width: options.width,
+    show: true,
+    type: 'alert',
+    title: options.title || '提示',
+    msg: msg,
+    confirmText: options.confirmText || '确定'
+  }), 'body');
+};
+
+function closeAlert() {
+  if (dom) {
+    document.body.removeChild(dom);
+    dom = null;
+  }
+}
+
+exports['default'] = dialog;
+
 /***/ }),
 /* 19 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -1557,7 +1600,7 @@ if (typeof result === "string") {
 
 exports = module.exports = __webpack_require__(1)(false);
 // Module
-exports.push([module.i, ".o-dialog {\n  width: 100%;\n  height: 100%;\n  position: fixed;\n  background-color: rgba(0, 0, 0, 0.4);\n  left: 0;\n  top: 0;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  z-index: 100;\n}\n\n.content {\n  width: 80%;\n  height: auto;\n  background-color: white;\n  position: fixed;\n  left: 10%;\n  top: 20%;\n  border-radius: 4px;\n  text-align: center;\n}\n\nh1 {\n  font-size: 18px;\n  font-weight: normal;\n  padding: 20px;\n  margin: 0px;\n}\n\np {\n  font-size: 16px;\n  color: #666;\n  padding-bottom: 20px;\n  margin: 0px;\n  border-bottom: 1px solid #eee;\n}\n\na {\n  padding: 15px;\n  text-align: center;\n  font-size: 16px;\n  display: inline-block;\n  width: 50%;\n  box-sizing: border-box;\n}\n\n.ok {\n  color: #07C160;\n}\n\n.close {\n  border-right: 1px solid #eee;\n  color: black;\n}", ""]);
+exports.push([module.i, ".o-dialog {\n  width: 100%;\n  height: 100%;\n  position: fixed;\n  background-color: rgba(0, 0, 0, 0.4);\n  left: 0;\n  top: 0;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  z-index: 100;\n}\n\n.content {\n  width: 80%;\n  height: auto;\n  background-color: white;\n  position: fixed;\n  left: 10%;\n  top: 20%;\n  border-radius: 4px;\n  text-align: center;\n  padding: 10px;\n}\n\nh1 {\n  font-size: 18px;\n  font-weight: normal;\n  padding: 20px;\n  margin: 0px;\n}\n\np {\n  font-size: 16px;\n  color: #666;\n  padding-bottom: 20px;\n  margin: 0px;\n  border-bottom: 1px solid #eee;\n}\n\na {\n  padding: 15px;\n  text-align: center;\n  font-size: 16px;\n  display: inline-block;\n  width: 50%;\n  box-sizing: border-box;\n}\n\n.ok {\n  color: #07C160;\n  cursor: pointer;\n}\n\n.close {\n  border-right: 1px solid #eee;\n  color: black;\n  cursor: pointer;\n}\n", ""]);
 
 
 
@@ -2701,15 +2744,36 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
       return _index2['default'];
     }
   }, {
+    key: 'installed',
+    value: function installed() {
+      this.computeTop();
+    }
+  }, {
+    key: 'computeTop',
+    value: function computeTop() {
+      if (this.ctt) {
+        this.ctt.style.top = (window.innerHeight - parseInt(getComputedStyle(this.ctt).height)) / 2 + 'px';
+      }
+    }
+  }, {
+    key: 'afterUpdate',
+    value: function afterUpdate() {
+      this.computeTop();
+    }
+  }, {
     key: 'render',
     value: function render(props) {
+      var _this2 = this;
+
       if (!props.show) return;
       return Omi.h(
         'div',
         { 'class': 'o-popup' },
         Omi.h(
           'div',
-          { 'class': '_content', style: 'width:' + props.width + 'px;margin-left:' + props.width / -2 + 'px' },
+          { 'class': '_content', ref: function ref(e) {
+              _this2.ctt = e;
+            }, style: 'width:' + props.width + 'px;margin-left:' + props.width / -2 + 'px' },
           Omi.h(
             'div',
             { 'class': '_header' },
@@ -2773,7 +2837,7 @@ if (typeof result === "string") {
 
 exports = module.exports = __webpack_require__(1)(false);
 // Module
-exports.push([module.i, ".o-popup {\n  width: 100%;\n  height: 100%;\n  position: fixed;\n  background-color: rgba(0, 0, 0, 0.4);\n  left: 0;\n  top: 0;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  z-index: 100;\n}\n\n._content {\n  width: 80%;\n  height: auto;\n  min-height: 200px;\n  background-color: white;\n  position: fixed;\n  left: 50%;\n  margin-left: -40%;\n  top: 20%;\n  border-radius: 4px;\n}\n\n._header {\n  height: 40px;\n  border-bottom: 1px solid #ccc;\n  margin: 15px 10px;\n}\n\n._close {\n  position: absolute;\n  right: 10px;\n  top: 20px;\n  cursor: pointer;\n}\n\n._title {\n  position: absolute;\n  left: 10px;\n  top: 20px;\n}\n\n._main {\n  margin: 0 auto;\n  margin-bottom: 20px;\n  width: 70%;\n}\n\n._footer {\n  text-align: right;\n  margin-top: 10px;\n}\n\n._okBtn {\n  margin-left: 10px;\n}", ""]);
+exports.push([module.i, ".o-popup {\n  width: 100%;\n  height: 100%;\n  position: fixed;\n  background-color: rgba(0, 0, 0, 0.4);\n  left: 0;\n  top: 0;\n  margin: 0;\n  padding: 0;\n  box-sizing: border-box;\n  z-index: 100;\n}\n\n._content {\n  width: 80%;\n  height: auto;\n  min-height: 200px;\n  background-color: white;\n  position: fixed;\n  left: 50%;\n  margin-left: -40%;\n  border-radius: 4px;\n}\n\n._header {\n  height: 40px;\n  border-bottom: 1px solid #ccc;\n  margin: 15px 10px;\n}\n\n._close {\n  position: absolute;\n  right: 10px;\n  top: 20px;\n  cursor: pointer;\n}\n\n._title {\n  position: absolute;\n  left: 10px;\n  top: 20px;\n}\n\n._main {\n  margin: 0 auto;\n  margin-bottom: 20px;\n  width: 70%;\n}\n\n._footer {\n  text-align: right;\n  margin-top: 10px;\n}\n\n._okBtn {\n  margin-left: 10px;\n}", ""]);
 
 
 
@@ -4014,6 +4078,9 @@ var toast = {},
     dom = void 0;
 
 toast.showLoading = function (wording) {
+  if (dom) {
+    document.body.removeChild(dom);
+  }
   dom = (0, _omi.render)(Omi.h(
     'o-toast',
     {
@@ -4024,7 +4091,10 @@ toast.showLoading = function (wording) {
 };
 
 toast.hideLoading = function () {
-  document.body.removeChild(dom);
+  if (dom) {
+    document.body.removeChild(dom);
+    dom = null;
+  }
 };
 
 exports['default'] = toast;

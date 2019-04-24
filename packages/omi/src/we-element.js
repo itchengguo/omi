@@ -1,7 +1,8 @@
-import { cssToDom, nProps, isArray } from './util'
+import { cssToDom, nProps, isArray, getUse } from './util'
 import { diff } from './vdom/diff'
 import options from './options'
 import { proxyUpdate } from './observe'
+import { getPath } from './define'
 
 let id = 0
 
@@ -15,20 +16,26 @@ export default class WeElement extends HTMLElement {
       this.constructor.defaultProps
     )
     this.elementId = id++
-    this.data = this.constructor.data || {}
+    this.data = {}
   }
 
   connectedCallback() {
-    if (!this.constructor.pure) {
-      let p = this.parentNode
-      while (p && !this.store) {
-        this.store = p.store
-        p = p.parentNode || p.host
-      }
-      if (this.store) {
-        this.store.instances.push(this)
-      }
+    let p = this.parentNode
+    while (p && !this.store) {
+      this.store = p.store
+      p = p.parentNode || p.host
     }
+    if (this.store) {
+      this.store.instances.push(this)
+		}
+
+		if(this.initUse){
+			const use = this.initUse()
+			this._updatePath = getPath(use)
+			this.use = getUse(this.store.data, use)
+		}else{
+			this.constructor.use && (this.use = getUse(this.store.data, this.constructor.use))
+		}
     this.beforeInstall()
     !this._isInstalled && this.install()
     this.afterInstall()
@@ -44,8 +51,11 @@ export default class WeElement extends HTMLElement {
         shadowRoot.removeChild(fc)
       }
     }
-
-    this.css && shadowRoot.appendChild(cssToDom(typeof this.css === 'function' ? this.css() : this.css))
+    if (this.constructor.css) {
+      shadowRoot.appendChild(cssToDom(this.constructor.css))
+    } else if (this.css) {
+      shadowRoot.appendChild(cssToDom(typeof this.css === 'function' ? this.css() : this.css))
+    }
     !this._isInstalled && this.beforeRender()
     options.afterInstall && options.afterInstall(this)
     if (this.constructor.observe) {
@@ -98,7 +108,6 @@ export default class WeElement extends HTMLElement {
       this.shadowRoot
     )
     this._willUpdate = false
-    this.afterUpdate()
     this.updated()
   }
 
@@ -117,8 +126,6 @@ export default class WeElement extends HTMLElement {
   uninstall() {}
 
   beforeUpdate() {}
-
-  afterUpdate() {} //deprecated, please use updated
 
   updated() {}
 

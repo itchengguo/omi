@@ -1,5 +1,5 @@
 /*!
- *  omix v1.0.0 by dntzhang
+ *  omix v1.0.2 by dntzhang
  *  Github: https://github.com/Tencent/omi
  *  MIT Licensed.
 */
@@ -32,6 +32,7 @@ function _Component(option) {
   option.ready = function () {
     const page = getCurrentPages()[getCurrentPages().length - 1]
     this.context = option.context || page.context
+    option.data = option.data || {}
     this.oData = JSON.parse(JSON.stringify(option.data))
     if (!option.data.___walked) {
       walk(option.data, true)
@@ -60,10 +61,8 @@ function fixPath(path) {
 }
 
 function observe(ele, data) {
-  let timeout = null
-  let patch = {}
   obaa(ele.oData, (prop, value, old, path) => {
-    clearTimeout(timeout)
+    let patch = {}
     if (prop.indexOf('Array-push') === 0) {
       let dl = value.length - old.length
       for (let i = 0; i < dl; i++) {
@@ -75,12 +74,11 @@ function observe(ele, data) {
       patch[fixPath(path + '-' + prop)] = value
     }
 
-    timeout = setTimeout(() => {
-      ele.setData(patch)
-      patch = {}
-      //update fn prop
-      updateByFnProp(ele, data)
-    }, 0)
+    
+    ele.setData(patch)
+    //update fn prop
+    updateByFnProp(ele, data)
+    
   })
 }
 
@@ -92,7 +90,6 @@ function updateByFnProp(ele, data) {
   ele.setData(patch)
 }
 
-let globalStore = null
 
 function create(store, option) {
   if (arguments.length === 2) {
@@ -101,7 +98,7 @@ function create(store, option) {
     }
 
     getApp().globalData && (getApp().globalData.store = store)
-    globalStore = store
+   
     option.data = option.data || {}
     option.data.store = store.data
     observeStore(store)
@@ -149,10 +146,8 @@ function create(store, option) {
 
 
 function observeStore(store) {
-  let timeout = null
-  let patch = {}
   obaa(store.data, (prop, value, old, path) => {
-    clearTimeout(timeout)
+    let patch = {}
     if (prop.indexOf('Array-push') === 0) {
       let dl = value.length - old.length
       for (let i = 0; i < dl; i++) {
@@ -164,29 +159,30 @@ function observeStore(store) {
       patch['store.' + fixPath(path + '-' + prop)] = value
     }
 
-    timeout = setTimeout(() => {
-      _update(patch)
-      patch = {}
-    }, 0)
+    _update(patch, store)
+    
+    
   })
 }
 
-function _update(kv) {
-  for (let key in globalStore.instances) {
-    globalStore.instances[key].forEach(ins => {
+function _update(kv, store) {
+  for (let key in store.instances) {
+    store.instances[key].forEach(ins => {
       ins.setData.call(ins, kv)
-      updateStoreByFnProp(ins, globalStore.data)
+      updateStoreByFnProp(ins, store.data)
     })
   }
-  globalStore.onChange && globalStore.onChange(kv)
+  store.onChange && store.onChange(kv)
 }
 
 function updateStoreByFnProp(ele, data) {
-  let patch = {}
-  for (let key in data.store.__fnMapping) {
-    patch['store.' + key] = data.store.__fnMapping[key].call(data)
+  if(data.store){
+    let patch = {}
+    for (let key in data.store.__fnMapping) {
+      patch['store.' + key] = data.store.__fnMapping[key].call(data)
+    }
+    ele.setData(patch)
   }
-  ele.setData(patch)
 }
 
 

@@ -2,7 +2,7 @@
     'use strict';
     function VNode() {}
     function h(nodeName, attributes) {
-        var lastSimple, child, simple, i, children = EMPTY_CHILDREN;
+        var lastSimple, child, simple, i, children = [];
         for (i = arguments.length; i-- > 2; ) stack.push(arguments[i]);
         if (attributes && null != attributes.children) {
             if (!stack.length) stack.push(attributes.children);
@@ -11,7 +11,7 @@
         while (stack.length) if ((child = stack.pop()) && void 0 !== child.pop) for (i = child.length; i--; ) stack.push(child[i]); else {
             if ('boolean' == typeof child) child = null;
             if (simple = 'function' != typeof nodeName) if (null == child) child = ''; else if ('number' == typeof child) child = String(child); else if ('string' != typeof child) simple = !1;
-            if (simple && lastSimple) children[children.length - 1] += child; else if (children === EMPTY_CHILDREN) children = [ child ]; else children.push(child);
+            if (simple && lastSimple) children[children.length - 1] += child; else if (0 === children.length) children = [ child ]; else children.push(child);
             lastSimple = simple;
         }
         var p = new VNode();
@@ -57,6 +57,37 @@
             result[key] = props[key].value;
         });
         return result;
+    }
+    function getUse(data, paths) {
+        var obj = [];
+        paths.forEach(function(path, index) {
+            var isPath = 'string' == typeof path;
+            if (isPath) obj[index] = getTargetByPath(data, path); else {
+                var key = Object.keys(path)[0];
+                var value = path[key];
+                if ('string' == typeof value) obj[index] = getTargetByPath(data, value); else {
+                    var tempPath = value[0];
+                    if ('string' == typeof tempPath) {
+                        var tempVal = getTargetByPath(data, tempPath);
+                        obj[index] = value[1] ? value[1](tempVal) : tempVal;
+                    } else {
+                        var args = [];
+                        tempPath.forEach(function(path) {
+                            args.push(getTargetByPath(data, path));
+                        });
+                        obj[index] = value[1].apply(null, args);
+                    }
+                }
+                obj[key] = obj[index];
+            }
+        });
+        return obj;
+    }
+    function getTargetByPath(origin, path) {
+        var arr = path.replace(/]/g, '').replace(/\[/g, '.').split('.');
+        var current = origin;
+        for (var i = 0, len = arr.length; i < len; i++) current = current[arr[i]];
+        return current;
     }
     function cloneElement(vnode, props) {
         return h(vnode.nodeName, extend(extend({}, vnode.attributes), props), arguments.length > 2 ? [].slice.call(arguments, 2) : vnode.children);
@@ -277,7 +308,7 @@
         while (c = mounts.pop()) {
             if (options.afterMount) options.afterMount(c);
             if (c.installed) c.installed();
-            if (c.css) addStyleToHead('function' == typeof c.css ? c.css() : c.css, '_s' + getCtorName(c.constructor));
+            if (c.constructor.css || c.css) addStyleToHead(c.constructor.css ? c.constructor.css : 'function' == typeof c.css ? c.css() : c.css, '_s' + getCtorName(c.constructor));
         }
     }
     function diff(dom, vnode, context, mountAll, parent, componentRoot) {
@@ -398,6 +429,52 @@
         for (name in old) if ((!attrs || null == attrs[name]) && null != old[name]) setAccessor(dom, name, old[name], old[name] = void 0, isSvgMode);
         for (name in attrs) if (!('children' === name || 'innerHTML' === name || name in old && attrs[name] === ('value' === name || 'checked' === name ? dom[name] : old[name]))) setAccessor(dom, name, old[name], old[name] = attrs[name], isSvgMode);
     }
+    function define(name, ctor) {
+        options.mapping[name] = ctor;
+        if (ctor.use) ctor.updatePath = getPath(ctor.use); else if (ctor.data) ctor.updatePath = getUpdatePath(ctor.data);
+    }
+    function getPath(obj) {
+        if ('[object Array]' === Object.prototype.toString.call(obj)) {
+            var result = {};
+            obj.forEach(function(item) {
+                if ('string' == typeof item) result[item] = !0; else {
+                    var tempPath = item[Object.keys(item)[0]];
+                    if ('string' == typeof tempPath) result[tempPath] = !0; else if ('string' == typeof tempPath[0]) result[tempPath[0]] = !0; else tempPath[0].forEach(function(path) {
+                        return result[path] = !0;
+                    });
+                }
+            });
+            return result;
+        } else return getUpdatePath(obj);
+    }
+    function getUpdatePath(data) {
+        var result = {};
+        dataToPath(data, result);
+        return result;
+    }
+    function dataToPath(data, result) {
+        Object.keys(data).forEach(function(key) {
+            result[key] = !0;
+            var type = Object.prototype.toString.call(data[key]);
+            if ('[object Object]' === type) _objToPath(data[key], key, result); else if ('[object Array]' === type) _arrayToPath(data[key], key, result);
+        });
+    }
+    function _objToPath(data, path, result) {
+        Object.keys(data).forEach(function(key) {
+            result[path + '.' + key] = !0;
+            delete result[path];
+            var type = Object.prototype.toString.call(data[key]);
+            if ('[object Object]' === type) _objToPath(data[key], path + '.' + key, result); else if ('[object Array]' === type) _arrayToPath(data[key], path + '.' + key, result);
+        });
+    }
+    function _arrayToPath(data, path, result) {
+        data.forEach(function(item, index) {
+            result[path + '[' + index + ']'] = !0;
+            delete result[path];
+            var type = Object.prototype.toString.call(item);
+            if ('[object Object]' === type) _objToPath(item, path + '[' + index + ']', result); else if ('[object Array]' === type) _arrayToPath(item, path + '[' + index + ']', result);
+        });
+    }
     function collectComponent(component) {
         var name = component.constructor.name;
         (components[name] || (components[name] = [])).push(component);
@@ -413,6 +490,15 @@
             inst.render = doRender;
         }
         vnode && (inst.scopedCssAttr = vnode.css);
+        if (inst.store && inst.store.data) if (inst.constructor.use) {
+            inst.use = getUse(inst.store.data, inst.constructor.use);
+            inst.store.instances.push(inst);
+        } else if (inst.initUse) {
+            var use = inst.initUse();
+            inst.H = getPath(use);
+            inst.use = getUse(inst.store.data, use);
+            inst.store.instances.push(inst);
+        }
         if (list) for (var i = list.length; i--; ) if (list[i].constructor === Ctor) {
             inst.__b = list[i].__b;
             list.splice(i, 1);
@@ -496,7 +582,7 @@
             if (!skip) {
                 component.beforeRender && component.beforeRender();
                 rendered = component.render(props, data, context);
-                if (component.css) addScopedAttrStatic(rendered, '_s' + getCtorName(component.constructor));
+                if (component.constructor.css || component.css) addScopedAttrStatic(rendered, '_s' + getCtorName(component.constructor));
                 scopeHost(rendered, component.scopedCssAttr);
                 if (component.getChildContext) context = extend(extend({}, context), component.getChildContext());
                 var toUnmount, base, childComponent = rendered && rendered.nodeName, ctor = options.mapping[childComponent];
@@ -579,6 +665,10 @@
         var base = component.base;
         component.__x = !0;
         if (component.uninstall) component.uninstall();
+        if (component.store && component.store.instances) for (var i = 0, len = component.store.instances.length; i < len; i++) if (component.store.instances[i] === component) {
+            component.store.instances.splice(i, 1);
+            break;
+        }
         component.base = null;
         var inner = component._component;
         if (inner) unmountComponent(inner); else if (base) {
@@ -595,17 +685,82 @@
     }
     function render(vnode, parent, store, empty, merge) {
         parent = 'string' == typeof parent ? document.querySelector(parent) : parent;
+        obsStore(store);
         if (empty) while (parent.firstChild) parent.removeChild(parent.firstChild);
         if (merge) merge = 'string' == typeof merge ? document.querySelector(merge) : merge;
         return diff(merge, vnode, store, !1, parent, !1);
     }
-    function define(name, ctor) {
-        options.mapping[name] = ctor;
+    function obsStore(store) {
+        if (store && store.data) {
+            store.instances = [];
+            extendStoreUpate(store);
+            obaa(store.data, function(prop, val, old, path) {
+                var patchs = {};
+                var key = fixPath(path + '-' + prop);
+                patchs[key] = !0;
+                store.update(patchs);
+            });
+        }
+    }
+    function merge(vnode, merge, store) {
+        obsStore(store);
+        merge = 'string' == typeof merge ? document.querySelector(merge) : merge;
+        return diff(merge, vnode, store);
+    }
+    function extendStoreUpate(store) {
+        store.update = function(patch) {
+            var _this = this;
+            var updateAll = matchGlobalData(this.globalData, patch);
+            if (Object.keys(patch).length > 0) {
+                this.instances.forEach(function(instance) {
+                    if (updateAll || _this.updateAll || instance.constructor.updatePath && needUpdate(patch, instance.constructor.updatePath) || instance.H && needUpdate(patch, instance.H)) {
+                        if (instance.constructor.use) instance.use = getUse(store.data, instance.constructor.use); else if (instance.initUse) instance.use = getUse(store.data, instance.initUse());
+                        instance.update();
+                    }
+                });
+                this.onChange && this.onChange(patch);
+            }
+        };
+    }
+    function matchGlobalData(globalData, diffResult) {
+        if (!globalData) return !1;
+        for (var keyA in diffResult) {
+            if (globalData.indexOf(keyA) > -1) return !0;
+            for (var i = 0, len = globalData.length; i < len; i++) if (includePath(keyA, globalData[i])) return !0;
+        }
+        return !1;
+    }
+    function needUpdate(diffResult, updatePath) {
+        for (var keyA in diffResult) {
+            if (updatePath[keyA]) return !0;
+            for (var keyB in updatePath) if (includePath(keyA, keyB)) return !0;
+        }
+        return !1;
+    }
+    function includePath(pathA, pathB) {
+        if (0 === pathA.indexOf(pathB)) {
+            var next = pathA.substr(pathB.length, 1);
+            if ('[' === next || '.' === next) return !0;
+        }
+        return !1;
+    }
+    function fixPath(path) {
+        var mpPath = '';
+        var arr = path.replace('#-', '').split('-');
+        arr.forEach(function(item, index) {
+            if (index) if (isNaN(Number(item))) mpPath += '.' + item; else mpPath += '[' + item + ']'; else mpPath += item;
+        });
+        return mpPath;
     }
     function rpx(str) {
         return str.replace(/([1-9]\d*|0)(\.\d*)*rpx/g, function(a, b) {
             return window.innerWidth * Number(b) / 750 + 'px';
         });
+    }
+    function tag(name) {
+        return function(target) {
+            define(name, target);
+        };
     }
     function _classCallCheck$1(instance, Constructor) {
         if (!(instance instanceof Constructor)) throw new TypeError("Cannot call a class as a function");
@@ -672,13 +827,21 @@
         }
         return str || void 0;
     }
-    function renderToString(vnode, opts, store, isSvgMode, css) {
-        if (null == vnode || 'boolean' == typeof vnode) return '';
-        var nodeName = vnode.nodeName, attributes = vnode.attributes, isComponent = !1;
+    function renderToString(vnode, opts, store, isSvgMode) {
         store = store || {};
         opts = Object.assign({
             scopedCSS: !0
         }, opts);
+        var css = {};
+        var html = _renderToString(vnode, opts, store, isSvgMode, css);
+        return {
+            css: Object.values(css),
+            html: html
+        };
+    }
+    function _renderToString(vnode, opts, store, isSvgMode, css) {
+        if (null == vnode || 'boolean' == typeof vnode) return '';
+        var nodeName = vnode.nodeName, attributes = vnode.attributes, isComponent = !1;
         var pretty = opts.pretty, indentChar = pretty && 'string' == typeof pretty ? pretty : '\t';
         if ('object' != typeof vnode && !nodeName) return encodeEntities(vnode);
         var ctor = mapping$1[nodeName];
@@ -692,18 +855,20 @@
             if (c.install) c.install();
             if (c.beforeRender) c.beforeRender();
             rendered = c.render(c.props, c.data, c.store);
-            var tempCss;
             if (opts.scopedCSS) {
-                if (c.css) {
-                    var cssStr = 'function' == typeof c.css ? c.css() : c.css;
+                if (c.constructor.css || c.css) {
+                    var cssStr = c.constructor.css ? c.constructor.css : 'function' == typeof c.css ? c.css() : c.css;
                     var cssAttr = '_s' + getCtorName(c.constructor);
-                    tempCss = '<style type="text/css" id="' + cssAttr + '">' + scoper(cssStr, cssAttr) + '</style>';
+                    css[cssAttr] = {
+                        id: cssAttr,
+                        css: scoper(cssStr, cssAttr)
+                    };
+                    addScopedAttrStatic(rendered, cssAttr);
                 }
-                if (c.css) addScopedAttrStatic(rendered, '_s' + getCtorName(c.constructor));
                 c.scopedCSSAttr = vnode.css;
                 scopeHost(rendered, c.scopedCSSAttr);
             }
-            return renderToString(rendered, opts, store, !1, tempCss);
+            return _renderToString(rendered, opts, store, !1, css);
         }
         var html, s = '';
         if (attributes) {
@@ -750,7 +915,7 @@
             for (var i = 0; i < vnode.children.length; i++) {
                 var child = vnode.children[i];
                 if (null != child && !1 !== child) {
-                    var childSvgMode = 'svg' === nodeName ? !0 : 'foreignObject' === nodeName ? !1 : isSvgMode, ret = renderToString(child, opts, store, childSvgMode);
+                    var childSvgMode = 'svg' === nodeName ? !0 : 'foreignObject' === nodeName ? !1 : isSvgMode, ret = _renderToString(child, opts, store, childSvgMode, css);
                     if (pretty && !hasLarge && isLargeString(ret)) hasLarge = !0;
                     if (ret) pieces.push(ret);
                 }
@@ -762,7 +927,7 @@
             if (pretty && ~s.indexOf('\n')) s += '\n';
             s += '</' + nodeName + '>';
         }
-        if (css) return css + s; else return s;
+        return s;
     }
     function assign$1(obj, props) {
         for (var i in props) obj[i] = props[i];
@@ -774,6 +939,10 @@
         var defaultProps = vnode.nodeName.defaultProps;
         if (void 0 !== defaultProps) for (var i in defaultProps) if (void 0 === props[i]) props[i] = defaultProps[i];
         return props;
+    }
+    function htm(t) {
+        var r = n(this, e(t), arguments, []);
+        return r.length > 1 ? r : r[0];
     }
     function createRef() {
         return {};
@@ -796,7 +965,6 @@
         styleCache: []
     };
     var stack = [];
-    var EMPTY_CHILDREN = [];
     var getOwnPropertySymbols = Object.getOwnPropertySymbols;
     var hasOwnProperty = Object.prototype.hasOwnProperty;
     var propIsEnumerable = Object.prototype.propertyIsEnumerable;
@@ -937,7 +1105,18 @@
                 if ('$observeProps' !== prop && '$observer' !== prop) if (!obaa.isFunction(target[prop])) {
                     if (!target.$observeProps) target.$observeProps = {};
                     if (void 0 !== path) target.$observeProps.$observerPath = path; else target.$observeProps.$observerPath = '#';
+                    var self = this;
                     var currentValue = target.$observeProps[prop] = target[prop];
+                    Object.defineProperty(target, prop, {
+                        get: function() {
+                            return this.$observeProps[prop];
+                        },
+                        set: function(value) {
+                            var old = this.$observeProps[prop];
+                            this.$observeProps[prop] = value;
+                            self.onPropertyChanged(prop, value, old, this, target.$observeProps.$observerPath);
+                        }
+                    });
                     if ('object' == typeof currentValue) {
                         if (obaa.isArray(currentValue)) {
                             this.mock(currentValue);
@@ -1045,6 +1224,32 @@
         return String(s).length > (length || 40) || !ignoreLines && -1 !== String(s).indexOf('\n') || -1 !== String(s).indexOf('<');
     };
     var JS_TO_CSS = {};
+    var n = function(t, r, u, e) {
+        for (var p = 1; p < r.length; p++) {
+            var s = r[p++], a = "number" == typeof s ? u[s] : s;
+            1 === r[p] ? e[0] = a : 2 === r[p] ? (e[1] = e[1] || {})[r[++p]] = a : 3 === r[p] ? e[1] = Object.assign(e[1] || {}, a) : e.push(r[p] ? t.apply(null, n(t, a, u, [ "", null ])) : a);
+        }
+        return e;
+    }, t = function(n) {
+        for (var t, r, u = 1, e = "", p = "", s = [ 0 ], a = function(n) {
+            1 === u && (n || (e = e.replace(/^\s*\n\s*|\s*\n\s*$/g, ""))) ? s.push(n || e, 0) : 3 === u && (n || e) ? (s.push(n || e, 1), 
+            u = 2) : 2 === u && "..." === e && n ? s.push(n, 3) : 2 === u && e && !n ? s.push(!0, 2, e) : 4 === u && r && (s.push(n || e, 2, r), 
+            r = ""), e = "";
+        }, f = 0; f < n.length; f++) {
+            f && (1 === u && a(), a(f));
+            for (var h = 0; h < n[f].length; h++) t = n[f][h], 1 === u ? "<" === t ? (a(), s = [ s ], u = 3) : e += t : p ? t === p ? p = "" : e += t : '"' === t || "'" === t ? p = t : ">" === t ? (a(), 
+            u = 1) : u && ("=" === t ? (u = 4, r = e, e = "") : "/" === t ? (a(), 3 === u && (s = s[0]), u = s, (s = s[0]).push(u, 4), 
+            u = 0) : " " === t || "\t" === t || "\n" === t || "\r" === t ? (a(), u = 2) : e += t);
+        }
+        return a(), s;
+    }, r = "function" == typeof Map, u = r ? new Map() : {}, e = r ? function(n) {
+        var r = u.get(n);
+        return r || u.set(n, r = t(n)), r;
+    } : function(n) {
+        for (var r = "", e = 0; e < n.length; e++) r += n[e].length + "-" + n[e];
+        return u[r] || (u[r] = t(n));
+    };
+    var html = htm.bind(h);
     var WeElement = Component;
     var defineElement = define;
     options.root.Omi = {
@@ -1064,10 +1269,14 @@
         classNames: classNames,
         extractClass: extractClass,
         getHost: getHost,
-        renderToString: renderToString
+        renderToString: renderToString,
+        tag: tag,
+        merge: merge,
+        html: html,
+        htm: htm
     };
     options.root.omi = options.root.Omi;
-    options.root.Omi.version = 'omio-1.3.7';
+    options.root.Omi.version = 'omio-2.2.1';
     var Omi = {
         h: h,
         createElement: h,
@@ -1085,7 +1294,11 @@
         classNames: classNames,
         extractClass: extractClass,
         getHost: getHost,
-        renderToString: renderToString
+        renderToString: renderToString,
+        tag: tag,
+        merge: merge,
+        html: html,
+        htm: htm
     };
     if ('undefined' != typeof module) module.exports = Omi; else self.Omi = Omi;
 }();

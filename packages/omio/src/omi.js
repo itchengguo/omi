@@ -1,15 +1,19 @@
 import { h, h as createElement } from './h'
 import { cloneElement } from './clone-element'
 import Component from './component'
-import { render } from './render'
+import { render, merge } from './render'
 import { rerender } from './render-queue'
 import options from './options'
 import { define } from './define'
 import { rpx } from './rpx'
+import { tag } from './tag'
 import ModelView from './model-view'
 import { classNames, extractClass } from './class'
 import { getHost } from './get-host'
 import { renderToString } from './render-to-string'
+import htm from 'htm'
+
+const html = htm.bind(h)
 
 const WeElement = Component
 const defineElement = define
@@ -34,10 +38,14 @@ options.root.Omi = {
   classNames,
   extractClass,
   getHost,
-  renderToString
+  renderToString,
+  tag,
+  merge,
+  html,
+  htm
 }
 options.root.omi = options.root.Omi
-options.root.Omi.version = 'omio-1.3.7'
+options.root.Omi.version = 'omio-2.2.1'
 
 export default {
   h,
@@ -56,7 +64,11 @@ export default {
   classNames,
   extractClass,
   getHost,
-  renderToString
+  renderToString,
+  tag,
+  merge,
+  html,
+  htm
 }
 
 export {
@@ -76,5 +88,9 @@ export {
   classNames,
   extractClass,
   getHost,
-  renderToString
+  renderToString,
+  tag,
+  merge,
+  html,
+  htm
 }

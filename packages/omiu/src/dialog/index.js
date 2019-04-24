@@ -1,4 +1,4 @@
-import { define, WeElement } from 'omi'
+import { define, WeElement, render } from 'omi'
 import style from './_index.css'
 
 define('o-dialog', class extends WeElement {
@@ -22,7 +22,7 @@ define('o-dialog', class extends WeElement {
     }
     return (
       <div class="o-dialog" style={{ display }}>
-        <div class="content" {...styleObj}>
+        <div class="_content" {...styleObj}>
           <h1>{props.title}</h1>
           <p>{props.msg}</p>
           {props.type === 'confirm' ? (
@@ -44,3 +44,53 @@ define('o-dialog', class extends WeElement {
     )
   }
 })
+
+let dialog = {},
+  dom
+
+dialog.alert = function (msg, options) {
+  options = options || {}
+  if (dom) {
+    document.body.removeChild(dom)
+  }
+  dom = render(<o-dialog
+    onConfirm={closeDialog}
+    width={options.width}
+    show={true}
+    type='alert'
+    title={options.title || '提示'}
+    msg={msg}
+    confirmText={options.confirmText || '确定'}
+  />, 'body')
+}
+
+dialog.confirm = function (msg, options) {
+  options = options || {}
+  if (dom) {
+    document.body.removeChild(dom)
+  }
+  dom = render(<o-dialog
+    onConfirm={()=>{
+      options.onConfirm&&options.onConfirm()
+      closeDialog()
+    }}
+    onClose={closeDialog}
+    width={options.width}
+    show={true}
+    type='confirm'
+    title={options.title || '提示'}
+    msg={msg}
+    cancelText={options.confirmText || '取消'}
+    confirmText={options.confirmText || '确定'}
+  />, 'body')
+}
+
+
+function closeDialog() {
+  if (dom) {
+    document.body.removeChild(dom)
+    dom = null
+  }
+}
+
+export default dialog

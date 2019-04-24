@@ -1,19 +1,21 @@
 English | [简体中文](./README.md) | [한국어](./README.KR.md)
 
-<p align="right">Omi <strong>v5.0.23</strong></p>
-<p align="right">Omio <strong>v1.3.7</strong></p>
+<p align="right">Omi <strong>v6.0.3</strong></p>
+<p align="right">Omio <strong>v2.1.0</strong></p>
 <p align="center"><img src="./assets/omi-logo2019.svg" alt="omi" width="300"/></p>
-<h2 align="center">Omi - Next generation front end framework using web components with omio(IE8+) and omip(小程序) fallback in tiny js.</h2>
+<h2 align="center">Omi - Next front end framework using web components with omio(IE8+) and omip(小程序) fallback in tiny js.</h2>
 
 ## Ecosystem of Omi
 
 | **Project**                         | **Description**                           |
 | ------------------------------- | ----------------------------------- |
-| [omi-docs](https://github.com/Tencent/omi/blob/master/docs/main-concepts.md)| Omi official documents |
-| [omip![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omip)| 直接使用 Omi 开发小程序！！！|
+| [omi-docs](https://tencent.github.io/omi/site/docs/index.html)| Omi official documents |
+| [omip![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omip)| 直接使用 Omi 开发小程序或 H5 SPA！！！|
+| [omi-cloud![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omi-cloud)| 小程序•云开发|
 | [omio![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omio)| Omi for old browsers(IE8+ and mobile browsers).|
-| [omiu![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png)](https://tencent.github.io/omi/packages/omiu/examples/build/index.html)| Omi official UI|
+| [omis![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omis)| Server-side rendering(support omio only). |
 | [omix![](https://raw.githubusercontent.com/dntzhang/cax/master/asset/hot.png) ](https://github.com/Tencent/omi/tree/master/packages/omix)| Tiny size mini programe framework.|
+| [omiu](https://tencent.github.io/omi/packages/omiu/examples/build/index.html)| Omi official UI|
 | [omi-chart](https://github.com/Tencent/omi/tree/master/packages/omi-chart)| Simple HTML5 Charts using chart-x tag.|
 | [md2site](https://tencent.github.io/omi/assets/md2site/)| Static Site Generator with markdown powered by Omio.|
 | [omi-mvvm](https://github.com/Tencent/omi/blob/master/tutorial/omi-mvvm.md)| MVVM comes back bravely with [mappingjs](https://github.com/Tencent/omi/tree/master/packages/mappingjs) strong support.|
@@ -25,6 +27,7 @@ English | [简体中文](./README.md) | [한국어](./README.KR.md)
 | [omi-devtools](https://github.com/f/omi-devtools)| Browser DevTools extension |
 | [omi-cli](https://github.com/Tencent/omi/tree/master/packages/omi-cli)| Project scaffolding |
 | [omi-swiper](https://github.com/loo41/Omi-Swiper)| Omi + Swiper  |
+| [omi-vscode](https://github.com/ZainChen/omi-vscode)| Vscode extension for omi, [Install now!](https://marketplace.visualstudio.com/items?itemName=ZainChen.omi) |
 | [omi-ex](https://github.com/Tencent/omi/tree/master/packages/omi-ex)| Omi.js extension(TypeScript) |
 | [omi-transform](https://github.com/Tencent/omi/tree/master/packages/omi-transform)|Omi / [css3transform](https://tencent.github.io/omi/packages/omi-transform/css3transform/) integration. Made css3 transform super easy in your Omi project.|
 | [omi-tap](https://github.com/Tencent/omi/releases/tag/v4.0.24)| Native tap event support(omi v4.0.24+）|
@@ -37,6 +40,7 @@ English | [简体中文](./README.md) | [한국어](./README.KR.md)
 
 ## Why Omi?
 
+- One framework. Mobile & desktop & mini program.
 - Tiny size
 - Supports TypeScript
 - Reactive data-binding
@@ -51,7 +55,7 @@ English | [简体中文](./README.md) | [한국어](./README.KR.md)
 - Look at [Facebook React vs Web Components](https://softwareengineering.stackexchange.com/questions/225400/pros-and-cons-of-facebooks-react-vs-web-components-polymer)，Omi **combines their advantages** and gives developers the **freedom to choose the way they like**
 - **Shadow DOM merges with Virtual DOM**, Omi uses both virtual DOM and real Shadow DOM to make view updates more accurate and faster
 - **Scoped CSS**'s best solution is [**Shadow DOM**](https://developers.google.com/web/fundamentals/web-components/shadowdom), the community churning out frameworks and libraries for Scoped CSS (using JS or JSON writing styles such as Radium, jsxstyle, react-style; binding to webpack using generated unique `className` `filename-classname-hash`, such as CSS Modules, Vue), are hack technologies; _and Shadow DOM Style is the perfect solution_.
-<!-- - The original **Path Updating** system. Proxy-based automatic **accurate** update, **low power consumption**, high degree of freedom, excellent performance, easy integration of `requestIdleCallback`, say goodbye to `this.update` method when using **store system**! It will automatically update UI partially when data is changed -->
+- The original **Path Updating** **store system**. Proxy-based automatic **accurate** update, **low power consumption**, high degree of freedom, excellent performance, easy integration of `requestIdleCallback`,It will automatically update UI partially when data is changed
 
 Compare TodoApp by Omi and React, Omi and React rendering DOM structure:
 
@@ -96,11 +100,8 @@ Omi uses Shadow DOM based style isolation and semantic structure.
   - [Hello Element](#hello-element)
   - [TodoApp](#todoapp)
   - [Store](#store)
-  - [Mitt](#mitt)
-  - [Observe](#observe)
   - [Lifecycle](#lifecycle)
 - [Debugging](#debugging)
-- [React to Omi](#react-to-omi)
 - [Browsers Support](#browsers-support)
 - [Contributors](#contributors)
 - [Maintainers](#maintainers)
@@ -215,11 +216,10 @@ define('my-counter', class extends WeElement {
       count: 1
     }
 
-    css () {
-      return `span{
-        color: red;
+    static css = `
+      span{
+          color: red;
       }`
-    }
 
     sub = () => {
       this.data.count--
@@ -253,10 +253,10 @@ define('my-counter', class extends WeElement {
     count: 1
   }
 
-  //You can also pass strings directly
-  css = `span{
+  static css = `
+    span{
         color: red;
-      }`
+    }`
 
   sub = () => {
     this.data.count--
@@ -439,12 +439,11 @@ define('hello-element', class extends WeElement {
     evt.stopPropagation()
   }
 
- css = `
+ static css = `
       div {
         color: red;
         cursor: pointer;
       }`
-  }
 
   render(props) {
     return (
@@ -726,42 +725,13 @@ render(<todo-app />, "body", store);
 [→ Store Source Code](https://github.com/Tencent/omi/blob/master/packages/omi/examples/store/main.js) -->
 
 
-
+<!-- 
 ## Mitt
 
 If you don't want to use store's data system, you can also use publish subscribe mode. For example, using [mitt](https://github.com/developit/mitt) across component communication in Omi:
 
-* [cross-component-communication](https://github.com/Tencent/omi/blob/master/packages/omi-30-seconds/README.md#cross-component-communication)
+* [cross-component-communication](https://github.com/Tencent/omi/blob/master/packages/omi-30-seconds/README.md#cross-component-communication) -->
 
-## Observe
-
-### Omi Observe
-
-You can also use observe to create response views for element who no need `store`, such as:
-
-```js
-import { define, WeElement } from "omi"
-
-define("my-app", class extends WeElement {
-  static observe = true
-
-  install() {
-    this.data.name = "omi"
-  }
-
-  onClick = () => {
-    this.data.name = "Omi V4.0"
-  }
-
-  render(props, data) {
-    return (
-      <div onClick={this.onClick}>
-        <h1>Welcome to {data.name}</h1>
-      </div>
-    )
-  }
-})
-```
 <!-- 
 If you want to be compatible with IE11, please use the `omi-mobx` instead of omi's own observe.
 
@@ -811,7 +781,7 @@ Easy to debug via [Omi DevTools Extension](https://github.com/f/omi-devtools) [[
 Since Omi uses Web Components and Shadow-DOM, it doesn't need to have another elements panel such as React has. It just adds a panel to the **Elements' sidebar** and it's powerful as much as React DevTools.
 
 ![Omi DevTools](https://github.com/f/omi-devtools/raw/master/omi-devtools.gif)
-
+<!-- 
 ## React to Omi
 
 For example, the below is about migration React button as weui Omi button:
@@ -821,7 +791,7 @@ For example, the below is about migration React button as weui Omi button:
 * [Diff Split](https://github.com/Tencent/omi/commit/9790fadaaf20cfede80bcf9213756a83fc8c3949?diff=split)
 * [Diff Unified](https://github.com/Tencent/omi/commit/9790fadaaf20cfede80bcf9213756a83fc8c3949?diff=unified)
 * [Before](https://github.com/Tencent/omi/blob/c8af654f1d5865dc557c0b4b8ad524f702a69be5/packages/omi-weui/src/omi-weui/elements/button/button.js)
-* [After](https://github.com/Tencent/omi/blob/9790fadaaf20cfede80bcf9213756a83fc8c3949/packages/omi-weui/src/omi-weui/elements/button/button.js)
+* [After](https://github.com/Tencent/omi/blob/9790fadaaf20cfede80bcf9213756a83fc8c3949/packages/omi-weui/src/omi-weui/elements/button/button.js) -->
 
 ## Browsers Support
 

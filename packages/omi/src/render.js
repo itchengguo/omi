@@ -1,30 +1,28 @@
 import { diff } from './vdom/diff'
 import JSONProxy from './proxy'
+import { getUse } from './util'
 
 export function render(vnode, parent, store) {
   parent = typeof parent === 'string' ? document.querySelector(parent) : parent
   if (store) {
     store.instances = []
     extendStoreUpate(store)
-    let timeout = null
-    let patchs = {}
+
     store.data = new JSONProxy(store.data).observe(false, function(patch) {
-      clearTimeout(timeout)
+			const patchs = {}
       if (patch.op === 'remove') {
         // fix arr splice
         const kv = getArrayPatch(patch.path, store)
         patchs[kv.k] = kv.v
-        timeout = setTimeout(() => {
-          update(patchs, store)
-          patchs = {}
-        }, 0)
+
+				update(patchs, store)
+
       } else {
         const key = fixPath(patch.path)
         patchs[key] = patch.value
-        timeout = setTimeout(() => {
-          update(patchs, store)
-          patchs = {}
-        }, 0)
+
+				update(patchs, store)
+
       }
     })
     parent.store = store
@@ -46,8 +44,16 @@ function extendStoreUpate(store) {
           updateAll ||
           this.updateAll ||
           (instance.constructor.updatePath &&
-            needUpdate(patch, instance.constructor.updatePath))
+            needUpdate(patch, instance.constructor.updatePath)) ||(
+							instance._updatePath &&  needUpdate(patch, instance._updatePath))
         ) {
+					//update this.use
+					if(instance.constructor.use){
+						instance.use = getUse(store.data, instance.constructor.use)
+					} else if(instance.initUse){
+						instance.use = getUse(store.data, instance.initUse())
+					}
+
           instance.update()
         }
       })

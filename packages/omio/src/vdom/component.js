@@ -148,7 +148,7 @@ export function renderComponent(component, opts, mountAll, isChild) {
     rendered = component.render(props, data, context)
 
     //don't rerender
-    if (component.css) {
+    if (component.constructor.css || component.css) {
       addScopedAttrStatic(
         rendered,
         '_s' + getCtorName(component.constructor)
@@ -317,7 +317,16 @@ export function unmountComponent(component) {
 
   component._disable = true
 
-  if (component.uninstall) component.uninstall()
+	if (component.uninstall) component.uninstall()
+
+	if (component.store && component.store.instances) {
+		for (let i = 0, len = component.store.instances.length; i < len; i++) {
+			if (component.store.instances[i] === component) {
+				component.store.instances.splice(i, 1)
+				break
+			}
+		}
+	}
 
   component.base = null
 

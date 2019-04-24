@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/path/index",
+    "pages/tiger/index",
+    "pages/transformation/index",
+    "pages/animate/index",
+    "pages/batman/index",
+    
+    "pages/index/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "WeChat",
+    "navigationBarTextStyle": "black"
+  },
+  "sitemapLocation": "sitemap.json"
+}

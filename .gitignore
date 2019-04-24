@@ -12,9 +12,9 @@ package-lock.json
 .idea/
 
 /packages/*/node_modules
-
 /packages/*/yarn.lock
 /packages/*/yarn-error.log
 
 npm-debug.log
 /packages/*/todo.md
+bak.js
